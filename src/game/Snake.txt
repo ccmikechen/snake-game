@@ -1,0 +1,121 @@
+package game;
+
+import java.awt.Color;
+import java.awt.Graphics;
+import java.util.*;
+
+
+public class Snake implements Drawable{
+	
+	public static final int  UP 	= 1,
+							 RIGHT	= 2,
+							 DOWN	= 3,
+							 LEFT	= 4;
+	
+	private static final int DEFAULT_DIRECTION 	= RIGHT;
+	private static final int DEFAULT_LENGTH 	= 3;
+	private static final int DEFAULT_ORIGIN_X	= 5;
+	private static final int DEFAULT_ORIGIN_Y	= 5;
+	private static final Color DEFAULT_COLOR	= Color.GREEN;
+	
+	private List<Block> body = new ArrayList<Block>();
+	private Block head;
+	private int direction = DEFAULT_DIRECTION;
+	
+	private boolean turned = false;
+	
+	public Snake() {
+		for(int i = DEFAULT_LENGTH - 1; i >= 0; i--)
+			body.add(new Block(DEFAULT_ORIGIN_X - i, DEFAULT_ORIGIN_Y, DEFAULT_COLOR));
+		head = body.get(DEFAULT_LENGTH-1);
+	}
+	
+	synchronized public void addHead(int x, int y) {
+		Block b = new Block(x, y, DEFAULT_COLOR);
+		body.add(b);
+		head = b;
+	}
+	
+	synchronized public Block getHead() {
+		return head;
+	}
+	
+	synchronized public void walk() {
+		for(int i = 0; i < body.size() - 1; i++) {
+			Block b1 = body.get(i);
+			Block b2 = body.get(i+1);
+			b1.x = b2.x;
+			b1.y = b2.y;
+		}
+		switch(direction) {
+		case UP 	: head.y--; break;
+		case RIGHT	: head.x++; break;
+		case DOWN	: head.y++; break;
+		case LEFT	: head.x--; break;
+		}
+		turned = false;
+	}
+	
+	public void turn(int dir) {
+		if(!turned && Math.abs(dir - direction) != 2) {
+			direction = dir;
+			turned = true;
+		}
+	}
+	
+	synchronized public boolean checkCollide(int width, int height) {
+		switch(direction) {
+		case UP :
+			for(int i = 0; i < body.size()-1; i++)
+				if(head.x == body.get(i).x &&
+				   head.y-1 == body.get(i).y)
+					return true;
+			return head.y == 0;
+		case RIGHT :
+			for(int i = 0; i < body.size()-1; i++)
+				if(head.x+1 == body.get(i).x &&
+				   head.y == body.get(i).y)
+					return true;
+			return head.x == width/Block.SIZE - 1;
+		case DOWN :
+			for(int i = 0; i < body.size()-1; i++)
+				if(head.x == body.get(i).x &&
+				   head.y+1 == body.get(i).y)
+					return true;
+			return head.y == height/Block.SIZE - 1;
+		case LEFT :
+			for(int i = 0; i < body.size()-1; i++)
+				if(head.x-1 == body.get(i).x &&
+				   head.y == body.get(i).y)
+					return true;
+			return head.x == 0;
+		}
+		
+		return false;
+	}
+	
+	synchronized public boolean checkFood(Block food) {
+		switch(direction) {
+		case UP :
+			return head.x == food.x && head.y-1 == food.y;
+		case RIGHT :
+			return head.x+1 == food.x && head.y == food.y;
+		case DOWN :
+			return head.x == food.x && head.y+1 == food.y;
+		case LEFT :
+			return head.x-1 == food.x && head.y == food.y;
+		}
+		return false;
+	}
+	
+	synchronized public boolean checkIsBody(int x, int y) {
+		for(Block b : body)
+			if(b.x == x && b.y == y)
+				return true;
+		return false;
+	}
+	
+	synchronized public void update(Graphics g) {
+		body.forEach(b -> b.update(g));
+	}
+}
